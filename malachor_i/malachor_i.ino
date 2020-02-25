@@ -65,7 +65,7 @@ void setup() {
   init_pressure = bmp.readPressure();
   
   //2. TURN ON FLASH CHIP
-  flash.begin();
+  flash.begin(CHIPSIZE);
   flash.setClock(133);
 
   //3. GET INITIAL GYRO DATA
@@ -100,8 +100,8 @@ void loop() {
     pressure = bmp.readPressure();
     temperature = bmp.readTemperature();
 
-    //REACT TO DATA
-    if(acc[1] < 0){
+    //REACT TO DATA: Y Positive means falling, due to orientation of MPU
+    if(acc[1] > 0){
       phase = 3;
     }
     //WRITE TO FLASH CHIP
