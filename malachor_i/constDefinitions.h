@@ -18,4 +18,13 @@ int pyro1=20; int pyro2 = 21; int pyro3 = 22; int pyro4 = 23;
 int tvcX = 3;
 int tvcY=4;
 
+
+// PID Definitions
+#define KIX 1
+#define KIZ 1
+#define KPX 1
+#define KPZ 1
+#define KDX 1
+#define KDZ 1
+
 #endif

@@ -7,7 +7,7 @@
 #include "flash.h"
 #include "constDefinitions.h"
 #include "sd_ops.h"
-
+#include <PID_v1.h>
 //Declare BMP
 Adafruit_BMP280 bmp;
 float pressure;
@@ -31,11 +31,15 @@ uint32_t dataWritten = 0;
 bool done, ignite;
 
 Servo tvcXServo;
-Servo tvcYServo;
-
+Servo tvcZServo;
 
 //Counter to hold phase
 short phase;
+
+//PID Controller
+double zero_x, zero_z, err_x, err_z, x_input, z_input;
+PID pid_x(&x_input, &err_x, &zero_x, KPX,KIX,KDX, DIRECT);
+PID pid_z(&z_input, &err_z, &zero_z, KPZ,KIZ,KDZ, DIRECT);
 
 void setup() {
   // put your setup code here, to run once:
@@ -70,6 +74,9 @@ void setup() {
 
   //3. GET INITIAL GYRO DATA
   mpu.getMotion6(&acc[0], &acc[1], &acc[2], &init_gyro[0], &init_gyro[1], &init_gyro[2]);
+  zero_x = init_gyro[0];
+  zero_z = init_gyro[2];
+  
   //IGNITE
   delay(12000);
   digitalWrite(pyro3, HIGH);
@@ -121,14 +128,20 @@ void loop() {
       //TODO: Implement copying from flash chip to sd card, once code for each is verified via tests
     }
 
-    //TODO: TVC
-    //Kalman Filter: need covariance matrix (track history), predictive matrix, and data
-    //Predictive matrix: gyroscope data (raw)
-    //Data: Need to integrate (how?) (numeric?) possible wait cycles and use simpsons rule
-    //Result: ?
+    //TVC algorithm
+    if(phase > 0 && phase < 3){
+      x_input = gyro[0];
+      z_input = gyro[2];
+      pid_x.Compute();
+      pid_z.Compute();
+      //modify zero point
+      zero_x = x_input;
+      zero_z = z_input;
 
-    //Also need orientation of tvc (from servo?)
-    //Result: dynamics problem?
+      //move servos to account for error
+      tvcXServo.write(tvcXServo.read()+(err_x * 180.0 / PI));
+      tvcZServo.write(tvcZServo.read()+(err_z *180.0 / PI));
+    }
 
   }
   
